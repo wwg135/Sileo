@@ -8,14 +8,29 @@
  LOCALISATIONS
 */
 
-"No_Category" = "(无分类)";
-"Tweaks" = "插件";
-"Themes" = "主题";
-"Utilities" = "工具";
-"Applications" = "应用程序";
-"Addons" = "附加";
-"Games" = "游戏";
-"Developer" = "开发者";
-"Data_Storage" = "数据储存";
-"Terminal_Support" = "终端支持";
-"Text_Editors" = "文本编辑";
+"Addons"="附加组件";
+"Addons (ControlCenter)"="控制中心模块";
+"Aion Widgets"="Aion小部件";
+"Applications"="应用程序";
+"Control Center (Modules)"="控制中心模块";
+"Data_Storage"="数据储存";
+"Developer"="开发者";
+"Development"="开发";
+"Fonts (EFM)"="Emoji表情";
+"Games"="游戏";
+"Multimedia"="视频媒体";
+"Netskao-Cracks"="破解";
+"Netskao-NoAds"="去广告";
+"Netskao-Tweaks"="插件";
+"No_Category"="未分类";
+"Packaging"="Sileo商店";
+"SnowBoard Extensions"="滑雪板扩展";
+"System"="系统";
+"Terminal Support"="终端Terminal";
+"Terminal_Support"="终端支持";
+"Text_Editors"="文本编辑";
+"Themes"="主题";
+"Tweak Injection"="插件注入";
+"Tweaks"="插件";
+"Tweaks-Netskao"="插件";
+"Utilities"="工具";
