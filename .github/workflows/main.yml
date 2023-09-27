@@ -1,9 +1,17 @@
+name: Build Sileo
 on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - ".gitignore"
   workflow_dispatch:
-name: Build
+
+env:
+  VERSION: '2.5'
+
 jobs:
-  make:
-    name: Build Sileo
+  build:
     runs-on: macos-latest
     steps:
       - name: Checkout
@@ -17,7 +25,17 @@ jobs:
           PATH=/opt/procursus/sbin:/opt/procursus/bin:$PATH sudo /opt/procursus/bin/apt update
           sudo /opt/procursus/bin/apt -V full-upgrade -y --allow-downgrades -oDpkg::Options::=--force-confdef -oDpkg::Options::=--force-confnew 
         continue-on-error: true
-      
+
+      - name: Set env
+        run: |
+          sT=$(TZ=UTC-8 date +'%S')
+          echo "logT=$(TZ=UTC-8 date +'%Y年%m月%d %H:%M'):${sT}" >> $GITHUB_ENV
+
+      - name: Print env
+        run: |
+          echo ${{ env.VERSION }}
+          echo ${{ env.logT }}
+          
       - name: Upgrade
         run: |
           sudo /opt/procursus/bin/apt -V upgrade -y --allow-downgrades -oDpkg::Options::=--force-confdef -oDpkg::Options::=--force-confnew
@@ -34,14 +52,24 @@ jobs:
         run: |
           sudo xcode-select --switch /Applications/Xcode_14.2.app
 
-      - name: Build Sileo Nightly (iphoneos-arm64)
+      - name: Pre body
+        run: |
+          echo -e "\n更新时间：${{ env.logT }}" >> body.txt
+          echo -e "\n**当前更新日志如下：**" >> body.txt
+          echo -e "\n> - 同步官方最新2.5，汉化中文本地语言包" >> body.txt
+
+      - name: Build Sileo
         run: |
           make clean package NIGHTLY=1 DEBUG=0 ALL_BOOTSTRAPS=1 SILEO_PLATFORM=iphoneos-arm64
 
-      - name: Upload Latest Artifact
-        id: sileo-latest-upload
-        uses: actions/upload-artifact@v3
+      - name: Release deb
+        uses: softprops/action-gh-release@v1
         with:
-          name: sileo_Latest
-          path: |
-            packages/*.deb
+          name: sileo_${{ env.VERSION }}
+          tag_name: ${{ env.VERSION }}
+          target_commitish: main
+          body_path: body.txt
+          prerelease: true
+          token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
+          files: |
+           packages/*.deb
