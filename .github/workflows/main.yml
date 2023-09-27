@@ -69,7 +69,7 @@ jobs:
           tag_name: ${{ env.VERSION }}
           target_commitish: main
           body_path: body.txt
-          prerelease: true
+          latest: true
           token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
           files: |
            packages/*.deb
