@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Add Source</key>
+	<string>添加插件源</string>
+	<key>Packages</key>
+	<string>已安装插件</string>
+	<key>Refresh</key>
+	<string>刷新插件源</string>
+	<key>Search</key>
+	<string>搜索</string>
+	<key>Upgrade All</key>
+	<string>更新所有插件</string>
+</dict>
+</plist>
