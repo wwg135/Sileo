@@ -11,6 +11,7 @@ import SafariServices
 import MessageUI
 import Evander
 import os.log
+import UIKit
 
 class PackageViewController: SileoViewController, PackageQueueButtonDataProvider,
     UIScrollViewDelegate, DepictionViewDelegate, MFMailComposeViewControllerDelegate, PackageActions {
@@ -555,6 +556,18 @@ class PackageViewController: SileoViewController, PackageQueueButtonDataProvider
             let shareButton = self.shareButton else {
             return
         }
+
+        let downloadLink = package.obtainDownloadLink()
+        let downloadAction = UIAlertAction(title: String(localizationKey: "Package_Download_Action"), style: .default) { _ in
+            let target = SFSafariViewController(url: downloadLink)
+            target.modalTransitionStyle = .coverVertical
+            target.modalPresentationStyle = .formSheet
+    
+            if let topMostViewController = UIApplication.shared.windows.first?.topMostViewController {
+                topMostViewController.present(target, animated: true, completion: nil)
+            }
+        }
+        sharePopup.addAction(downloadAction)
         
         let sharePopup = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         let shareAction = UIAlertAction(title: String(localizationKey: "Package_Share_Action"), style: .default) { _ in
