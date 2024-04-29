@@ -2,7 +2,7 @@ name: Build Sileo
 on:
   push:
     branches:
-      - main
+      - '*'
     paths-ignore:
       - ".gitignore"
   workflow_dispatch:
