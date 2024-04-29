@@ -12,7 +12,7 @@ import Evander
 class APTWrapper {
     static let sileoFD = 6
     static let cydiaCompatFd = 6
-    static let debugFD = 11
+    static let debugFD = 12
 
     public enum FINISH: Int {
         case back = 0
