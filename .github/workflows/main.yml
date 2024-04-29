@@ -52,8 +52,8 @@ jobs:
         run: |
           sudo xcode-select --switch /Applications/Xcode_15.1.app
 
-      - name: Install Evander
-        run: swift package resolve
+      - name: Install Evander Module
+        run: npm install evander
 
       - name: Pre body
         run: |
