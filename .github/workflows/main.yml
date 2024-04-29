@@ -1,21 +1,43 @@
-name: Build Sileo
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - ".gitignore"
-  workflow_dispatch:
+  release:
+    types: [published]
 
-env:
-  VERSION: '2.5'
-
+name: Build
 jobs:
-  build:
-    runs-on: macos-latest
+  make:
+    name: Build and Upload Sileo
+    runs-on: macos-12
     steps:
+
       - name: Checkout
         uses: actions/checkout@master
+        with:
+          submodules: recursive
+          token: ${{ secrets.SILEO_PAT }}
+      - name: Import all certificates
+        env:
+          DEVELOPMENT_PASSWORD: ${{ secrets.DEVELOPMENT_PASSWORD }}
+          DEVELOPMENT_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE }}
+          DISTRIBUTION_CERTIFICATE: ${{ secrets.DISTRIBUTION_CERTIFICATE }}
+          DISTRIBUTION_PASSWORD: ${{ secrets.DISTRIBUTION_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          security create-keychain -p "" build.keychain
+          security list-keychains -s build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security set-keychain-settings
+          security import <(echo $DEVELOPMENT_CERTIFICATE | base64 --decode) \
+                          -f pkcs12 \
+                          -k build.keychain \
+                          -P $DEVELOPMENT_PASSWORD \
+                          -T /usr/bin/codesign
+          security import <(echo $DISTRIBUTION_CERTIFICATE | base64 --decode) \
+                          -f pkcs12 \
+                          -k build.keychain \
+                          -P $DISTRIBUTION_PASSWORD \
+                          -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
 
       - name: Setup Procursus Bootstrap (install)
         run: |
@@ -25,17 +47,7 @@ jobs:
           PATH=/opt/procursus/sbin:/opt/procursus/bin:$PATH sudo /opt/procursus/bin/apt update
           sudo /opt/procursus/bin/apt -V full-upgrade -y --allow-downgrades -oDpkg::Options::=--force-confdef -oDpkg::Options::=--force-confnew 
         continue-on-error: true
-
-      - name: Set env
-        run: |
-          sT=$(TZ=UTC-8 date +'%S')
-          echo "logT=$(TZ=UTC-8 date +'%Y年%m月%d %H:%M'):${sT}" >> $GITHUB_ENV
-
-      - name: Print env
-        run: |
-          echo ${{ env.VERSION }}
-          echo ${{ env.logT }}
-          
+      
       - name: Upgrade
         run: |
           sudo /opt/procursus/bin/apt -V upgrade -y --allow-downgrades -oDpkg::Options::=--force-confdef -oDpkg::Options::=--force-confnew
@@ -48,28 +60,64 @@ jobs:
         run: |
           echo '/opt/procursus/sbin:/opt/procursus/bin' >> $GITHUB_PATH
 
-      - name: Select Correct Xcode (15.1)
+      - name: Select Correct Xcode (14.2)
         run: |
-          sudo xcode-select --switch /Applications/Xcode_15.1.app
+          sudo xcode-select --switch /Applications/Xcode_14.2.app
 
-      - name: Pre body
+      - name: Build Sileo (iphoneos-arm)
         run: |
-          echo -e "\n更新时间：${{ env.logT }}" >> body.txt
-          echo -e "\n**当前更新日志如下：**" >> body.txt
-          echo -e "\n> - 同步官方最新2.5，汉化中文本地语言包" >> body.txt
+          make clean package DEBUG=0 ALL_BOOTSTRAPS=1
 
-      - name: Build Sileo
+      - name: Build Sileo (iphoneos-arm64)
         run: |
-          make clean package NIGHTLY=1 DEBUG=0 ALL_BOOTSTRAPS=1 SILEO_PLATFORM=iphoneos-arm64
+          make clean package DEBUG=0 ALL_BOOTSTRAPS=1 SILEO_PLATFORM=iphoneos-arm64
 
-      - name: Release deb
-        uses: softprops/action-gh-release@v1
+      - name: Build Sileo (darwin-amd64)
+        run: |
+          make clean package DEBUG=0 AUTOMATION=1 SILEO_PLATFORM=darwin-amd64
+
+      - name: Build Sileo (darwin-arm64)
+        run: |
+          make clean package DEBUG=0 AUTOMATION=1 SILEO_PLATFORM=darwin-arm64
+      
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v5
         with:
-          name: sileo_${{ env.VERSION }}
-          tag_name: ${{ env.VERSION }}
-          target_commitish: main
-          body_path: body.txt
-          latest: true
-          token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
-          files: |
-           packages/*.deb
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      - name: Push To Amy Repo
+        env:
+          AMY_GITHUB_TOKEN: ${{ secrets.AMY_GITHUB }}
+        run: |
+          git config --global user.name "Amy While (Automated)"
+          git config --global user.email "26681721+elihwyma@users.noreply.github.com"
+          git config --global credential.helper cache 
+
+          git clone https://${{ env.AMY_GITHUB_TOKEN }}@github.com/elihwyma/amy-repo.git
+          mv packages/* amy-repo/pool/
+          cd amy-repo
+          ./repo.sh
+          git add . 
+          git commit -m "build: sileo"
+          git push
+          cd ..
+          rm -rf amy-repo
+
+      - name: Push To Sileo Repo
+        env:
+          AMY_GITHUB_TOKEN: ${{ secrets.AMY_GITHUB }}
+        run: |
+          git config --global user.name "Amy While (Automated)"
+          git config --global user.email "26681721+elihwyma@users.noreply.github.com"
+          git config --global credential.helper cache 
+
+          git clone https://${{ env.AMY_GITHUB_TOKEN }}@github.com/sileo/repo.git
+          mv packages/* repo/pool/
+          cd repo
+          ./repo.sh
+          git add . 
+          git commit -m "build: sileo"
+          git push
+          cd ..
+          rm -rf repo
